@@ -1,7 +1,7 @@
 FROM eclipse-temurin:17-jdk AS build
 WORKDIR /app
 
-COPY gradlew settings.gradle build.gradle gradle/ ./gradle/
+COPY gradlew settings.gradle build.gradle gradle/gradle-wrapper.properties gradle/wrapper/gradle-wrapper.jar ./
 
 COPY src ./src
 
