@@ -1,25 +1,28 @@
-# --- 1) Build 스테이지: Gradle로 JAR 생성 ---
-FROM eclipse-temurin:17-jre AS build
+# 1) Build 스테이지: Gradle Wrapper로 JAR 생성
+FROM eclipse-temurin:17-jdk AS build
+
 WORKDIR /app
 
-# 1. 의존성 캐시용 복사
-COPY build.gradle settings.gradle ./
-# 2. 소스 복사
+# Gradle Wrapper 스크립트와 설정 복사
+COPY gradlew settings.gradle build.gradle gradle/ ./
+
+# 소스 코드 복사
 COPY src ./src
 
-# 3. JAR 빌드 (테스트 제외)
-RUN gradle clean bootJar --no-daemon -x test
+# 실행 권한 부여 후 빌드
+RUN chmod +x ./gradlew \
+ && ./gradlew clean bootJar -x test
 
-# --- 2) Runtime 스테이지: 경량 JRE 환경 ---
+# 2) Runtime 스테이지: 경량 JRE 환경
 FROM eclipse-temurin:17-jre-alpine
+
 WORKDIR /app
 
-# 빌드된 JAR 복사
+# 빌드된 JAR만 복사
 COPY --from=build /app/build/libs/*.jar app.jar
 
-# (선택) 프로파일 환경변수 ARG/ENV 선언
-# ARG SPRING_PROFILES_ACTIVE
-# ENV SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE}
-
+# 포트
 EXPOSE 8080
+
+# 컨테이너 실행 시 JAR 구동
 ENTRYPOINT ["java","-jar","/app/app.jar"]
