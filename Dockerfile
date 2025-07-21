@@ -2,26 +2,28 @@
 FROM eclipse-temurin:17-jdk AS build
 WORKDIR /app
 
-# 1) Wrapper 스크립트 복사
+# Gradle Wrapper 스크립트와 설정 복사
 COPY gradlew gradlew
 COPY gradlew.bat gradlew.bat
 
-# 2) Wrapper 설정(디렉터리) 통째로 복사
+# Gradle wrapper 디렉터리(gradle-wrapper.jar, properties) 전체 복사
 COPY gradle/wrapper gradle/wrapper
 
-# 3) 실행권한 부여
-RUN chmod +x gradlew
-
-# 4) 빌드 스크립트 및 소스 복사
+# 빌드 설정 파일 복사
 COPY settings.gradle build.gradle ./
+
+# 소스 코드 복사
 COPY src src
 
-# 5) JAR 생성
-RUN ./gradlew clean bootJar -x test --no-daemon
+# 잘못 설정된 JAVA_HOME 초기화 (시스템 PATH 상의 java 사용)
+ENV JAVA_HOME=""
+
+# Gradle Wrapper 실행권한 부여 & JAR 빌드
+RUN chmod +x gradlew \
+ && ./gradlew clean bootJar -x test --no-daemon
 
 # --- 2) Runtime 스테이지: 경량 JRE 환경에 빌드 결과만 옮기기 ---
 FROM eclipse-temurin:17-jre-alpine
-
 WORKDIR /app
 
 # 빌드된 JAR만 복사
