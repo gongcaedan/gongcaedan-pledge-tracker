@@ -1,21 +1,22 @@
 FROM eclipse-temurin:17-jdk AS build
 WORKDIR /app
 
-COPY gradlew settings.gradle build.gradle gradle/gradle-wrapper.properties gradle/wrapper/gradle-wrapper.jar ./
+# 1) Wrapper 복사
+COPY gradlew gradlew
+COPY gradle gradle
 
+# 2) 스크립트에 실행권한 부여
+RUN chmod +x gradlew
+
+# 3) 나머지 파일 복사
+COPY build.gradle settings.gradle ./
 COPY src ./src
 
-ENV JAVA_HOME=""
-
-RUN chmod +x ./gradlew \
- && ./gradlew clean bootJar -x test
+# 4) Wrapper로 빌드
+RUN ./gradlew clean bootJar -x test --no-daemon
 
 FROM eclipse-temurin:17-jre-alpine
-
 WORKDIR /app
-
 COPY --from=build /app/build/libs/*.jar app.jar
-
 EXPOSE 8080
-
 ENTRYPOINT ["java","-jar","/app/app.jar"]
