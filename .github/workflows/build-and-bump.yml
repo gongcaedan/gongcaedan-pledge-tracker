@@ -1,0 +1,49 @@
+name: build-and-bump
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "backend/**"
+      - ".github/workflows/build-and-bump.yml"
+  workflow_dispatch:
+
+env:
+  # 서비스별로 바꿔야 하는 2개
+  IMAGE_REPO: gongcaedan.kr.ncr.ntruss.com/gongcaedan/pledge-tracker
+  MANIFEST_SERVICE_PATH: pledge-tracker  # 예: pledge-tracker
+
+  # 공통 (Secrets에 넣어둔 값 사용)
+  MANIFEST_REPO_HTTPS: ${{ secrets.MANIFEST_REPO_HTTPS }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set IMAGE_TAG (short SHA)
+        run: echo "IMAGE_TAG=${GITHUB_SHA::7}" >> $GITHUB_ENV
+
+      - name: Docker login to NCR
+        run: |
+          echo "${{ secrets.NCR_PASSWORD }}" | docker login "${{ secrets.NCR_SERVER }}" \
+            -u "${{ secrets.NCR_USERNAME }}" --password-stdin
+
+      - name: Build & Push Image
+        run: |
+          docker build -t ${IMAGE_REPO}:${IMAGE_TAG} backend
+          docker push ${IMAGE_REPO}:${IMAGE_TAG}
+
+      - name: Clone manifest repo (HTTPS + PAT)
+        run: |
+          git clone "https://x-access-token:${{ secrets.MANIFEST_PAT }}@${{ secrets.MANIFEST_REPO_HTTPS#https:// }}" manifest
+          cd manifest
+          git config user.name  "${{ secrets.GIT_USER_NAME || 'github-actions' }}"
+          git config user.email "${{ secrets.GIT_USER_EMAIL || 'actions@github.com' }}"
+
+          # values.yaml의 image.tag 갱신
+          sed -i "s#^\(\s*tag:\s*\).*#\1\"${IMAGE_TAG}\"#g" ${MANIFEST_SERVICE_PATH}/values.yaml
+
+          git add ${MANIFEST_SERVICE_PATH}/values.yaml
+          git commit -m "ci(${MANIFEST_SERVICE_PATH}): bump image tag to ${IMAGE_TAG}" || exit 0
+          git push origin HEAD:main
