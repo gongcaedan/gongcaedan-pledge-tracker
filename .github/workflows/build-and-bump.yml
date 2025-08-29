@@ -31,7 +31,7 @@ jobs:
 
       - name: Build & Push Image
         run: |
-          docker build -t ${IMAGE_REPO}:${IMAGE_TAG} backend
+          docker build -t ${IMAGE_REPO}:${IMAGE_TAG} .
           docker push ${IMAGE_REPO}:${IMAGE_TAG}
 
       - name: Clone manifest repo (HTTPS + PAT)
