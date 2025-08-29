@@ -10,8 +10,8 @@ on:
 env:
   # 서비스별로 바꿔야 하는 2개
   IMAGE_REPO: gongcaedan.kr.ncr.ntruss.com/gongcaedan/pledge-tracker
-  MANIFEST_SERVICE_PATH: pledge-tracker  # 예: pledge-tracker
-
+  MANIFEST_SERVICE_PATH: pledge-tracker  # pledge-tracker
+  MANIFEST_REPO_HOSTPATH: github.com/gongcaedan/gongcaedan-manifest.git
   # 공통 (Secrets에 넣어둔 값 사용)
   MANIFEST_REPO_HTTPS: ${{ secrets.MANIFEST_REPO_HTTPS }}
 
@@ -35,8 +35,9 @@ jobs:
           docker push ${IMAGE_REPO}:${IMAGE_TAG}
 
       - name: Clone manifest repo (HTTPS + PAT)
+
         run: |
-          git clone "https://x-access-token:${{ secrets.MANIFEST_PAT }}@${{ secrets.MANIFEST_REPO_HTTPS#https:// }}" manifest
+          git clone "https://x-access-token:${{ secrets.MANIFEST_PAT }}@${{ env.MANIFEST_REPO_HOSTPATH }}" manifest
           cd manifest
           git config user.name  "${{ secrets.GIT_USER_NAME || 'github-actions' }}"
           git config user.email "${{ secrets.GIT_USER_EMAIL || 'actions@github.com' }}"
