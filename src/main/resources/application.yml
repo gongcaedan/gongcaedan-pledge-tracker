@@ -11,6 +11,11 @@ spring:
     show-sql: true
     database-platform: org.hibernate.dialect.MySQL8Dialect
 
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eurekaserver:8761/eureka
+
 management:
   endpoint:
     health:
