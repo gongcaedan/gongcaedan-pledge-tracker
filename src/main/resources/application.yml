@@ -1,4 +1,6 @@
 spring:
+  application:
+    name: pledge-tracker
   datasource:
     url: ${DB_URL}
     username: ${DB_USERNAME}
